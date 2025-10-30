@@ -1,6 +1,6 @@
 name: Auto Fetch ICC Stream
 
-"on":
+on:
   schedule:
     - cron: '0 10 * * *'  # Daily at 10:00 UTC
   workflow_dispatch:  # Manual trigger
@@ -27,17 +27,31 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable --no-install-recommends
 
+    - name: Verify Chrome installation
+      run: |
+        google-chrome --version
+        which google-chrome
+
     - name: Run stream fetcher
       env:
         ICC_USERNAME: ${{ secrets.ICC_USERNAME }}
         ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
       run: python fetch_stream.py
 
+    - name: Debug - List files  # Temporary: Remove after confirming fix
+      if: always()
+      run: |
+        pwd
+        ls -la *.m3u || echo "No .m3u files found!"
+        ls -la | grep -i icc || echo "No ICC-related files found!"
+
     - name: Upload M3U artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: icc-live-m3u
-        path: icc_live.m3u
-        if-no-files-found: ignore
+        path: "icc live.m3u"  # Quoted to handle space; matches script output
+        if-no-files-found: warn  # Temporary: Change to 'ignore' once fixed
         retention-days: 1
+        compression-level: 6
+        overwrite: false
