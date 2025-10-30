@@ -1,44 +1,43 @@
 name: Auto Fetch ICC Stream
 
-on:
- schedule:
- - cron: '0 10 * * *' # Daily at 10:00 UTC (adjust for match times)
- workflow_dispatch: # Manual trigger
+"on":
+  schedule:
+    - cron: '0 10 * * *'  # Daily at 10:00 UTC
+  workflow_dispatch:  # Manual trigger
 
 jobs:
- fetch:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
 
- - name: Set up Python
- uses: actions/setup-python@v5 # Updated to v5
- with:
- python-version: '3.12'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
 
- - name: Install dependencies
- run: |
- pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
 
- - name: Install Google Chrome
- run: |
- # Add Chrome repo key and sources
- wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome-archive-keyring.gpg
- echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-archive-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
- sudo apt-get update
- sudo apt-get install -y google-chrome-stable --no-install-recommends
+    - name: Install Google Chrome
+      run: |
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome-archive-keyring.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-archive-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable --no-install-recommends
 
- - name: Run stream fetcher
- env:
- ICC_USERNAME: ${{ secrets.ICC_USERNAME }}
- ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
- run: python fetch_stream.py
+    - name: Run stream fetcher
+      env:
+        ICC_USERNAME: ${{ secrets.ICC_USERNAME }}
+        ICC_PASSWORD: ${{ secrets.ICC_PASSWORD }}
+      run: python fetch_stream.py
 
- - name: Upload M3U artifact (Tivimate-compatible)
- if: always()
- uses: actions/upload-artifact@v4
- with:
- name: icc-live-m3u # Updated name
- path: icc_live.m3u # Matches modified script output
- if-no-files-found: ignore # Skip if no stream
- retention-days: 1
+    - name: Upload M3U artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: icc-live-m3u
+        path: icc_live.m3u
+        if-no-files-found: ignore
+        retention-days: 1
